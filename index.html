@@ -397,6 +397,49 @@
                 <input type="text" id="adm-wa" placeholder="رقم الواتساب">
                 <button class="admin-btn" style="width:100%; background:#2980b9" onclick="handleSettingsSave()">حفظ
                     الإعدادات</button>
+                <!-- قسم ضبط شحن المحافظات الجديد -->
+                <div class="glass-panel vertical-form"
+                    style="padding:15px; margin-top:20px; border: 1px solid var(--accent-cyan); background: rgba(0, 51, 102, 0.05);">
+                    <h4 style="color:var(--primary-blue); font-size: 14px;">🚚 ضبط أسعار شحن المحافظات</h4>
+                    <select id="adm-gov-name" style="margin-top:10px;">
+                        <option value="القاهرة">القاهرة</option>
+                        <option value="الجيزة">الجيزة</option>
+                        <option value="الإسكندرية">الإسكندرية</option>
+                        <option value="الدقهلية">الدقهلية</option>
+                        <option value="البحر الأحمر">البحر الأحمر</option>
+                        <option value="البحيرة">البحيرة</option>
+                        <option value="الفيوم">الفيوم</option>
+                        <option value="الغربية">الغربية</option>
+                        <option value="الإسماعيلية">الإسماعيلية</option>
+                        <option value="المنوفية">المنوفية</option>
+                        <option value="المنيا">المنيا</option>
+                        <option value="القليوبية">القليوبية</option>
+                        <option value="الوادي الجديد">الوادي الجديد</option>
+                        <option value="السويس">السويس</option>
+                        <option value="اسوان">اسوان</option>
+                        <option value="اسيوط">اسيوط</option>
+                        <option value="بني سويف">بني سويف</option>
+                        <option value="بورسعيد">بورسعيد</option>
+                        <option value="دمياط">دمياط</option>
+                        <option value="الشرقية">الشرقية</option>
+                        <option value="جنوب سيناء">جنوب سيناء</option>
+                        <option value="كفر الشيخ">كفر الشيخ</option>
+                        <option value="مطروح">مطروح</option>
+                        <option value="الأقصر">الأقصر</option>
+                        <option value="قنا">قنا</option>
+                        <option value="شمال سيناء">شمال سيناء</option>
+                        <option value="سوهاج">سوهاج</option>
+                    </select>
+                    <input type="number" id="adm-gov-price" placeholder="سعر الشحن للمحافظة">
+                    <button class="admin-btn" style="width:100%; background:var(--accent-cyan); font-size:12px;"
+                        onclick="saveGovShipping()">حفظ سعر المحافظة</button>
+
+                    <!-- عرض الأسعار المحفوظة للمسؤول -->
+                    <div id="gov-prices-preview"
+                        style="margin-top:10px; font-size:11px; max-height:100px; overflow-y:auto; background:#fff; padding:8px; border-radius:8px;">
+                        جاري تحميل الأسعار...
+                    </div>
+                </div>
 
                 <button class="admin-btn" style="width:100%; background:#2c3e50; margin-top:10px"
                     onclick="exportOrdersToExcel()">
@@ -525,6 +568,9 @@
             // جلب الإعدادات
             db.collection("settings").doc("main").onSnapshot(doc => {
                 if (doc.exists) settings = { ...settings, ...doc.data() };
+                if (document.getElementById('adm-wa')) document.getElementById('adm-wa').value = settings.wa || "";
+                updateGovPreview();
+                // ----------------------------
             });
 
             // جلب السلايدر
@@ -862,6 +908,48 @@
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
         function toggleSearch() { const s = document.getElementById('search-bar'); s.style.display = (s.style.display === 'none' ? 'block' : 'none'); }
         function updateCart() { document.getElementById('cart-count').innerText = cart.length; }
+        // دالة حفظ سعر شحن محافظة معينة
+        function saveGovShipping() {
+            const govName = document.getElementById('adm-gov-name').value;
+            const govPrice = parseFloat(document.getElementById('adm-gov-price').value);
+
+            if (isNaN(govPrice)) return alert("برجاء إدخال السعر أولاً");
+
+            // تحديث مصفوفة الشحن داخل كائن settings الحالي
+            if (!settings.govShipping) settings.govShipping = {};
+            settings.govShipping[govName] = govPrice;
+
+            // الحفظ في Firebase (نستخدم set مع merge للحفاظ على باقي الإعدادات مثل رقم الواتساب)
+            db.collection("settings").doc("main").set({
+                govShipping: settings.govShipping
+            }, { merge: true })
+                .then(() => {
+                    alert(`✅ تم حفظ شحن ${govName} بقيمة ${govPrice} ج.م`);
+                    document.getElementById('adm-gov-price').value = ''; // تفريغ الخانة
+                })
+                .catch(err => alert("حدث خطأ في الحفظ: " + err));
+        }
+
+        // دالة لتحديث الجدول الصغير للمسؤول لرؤية ما تم حفظه
+        function updateGovPreview() {
+            const previewDiv = document.getElementById('gov-prices-preview');
+            if (!previewDiv) return;
+
+            const prices = settings.govShipping || {};
+            let html = "<b>الأسعار الحالية:</b><br>";
+            const keys = Object.keys(prices);
+
+            if (keys.length === 0) {
+                html += "لا يوجد أسعار مضافة بعد.";
+            } else {
+                keys.forEach(gov => {
+                    html += `<div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee;">
+                        <span>${gov}</span> <span>${prices[gov]} ج.م</span>
+                     </div>`;
+                });
+            }
+            previewDiv.innerHTML = html;
+        }
         function closeModals() {
             // 1. إخفاء جميع النوافذ المنبثقة
             document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none');
