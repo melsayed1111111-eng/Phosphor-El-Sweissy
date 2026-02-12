@@ -177,8 +177,8 @@
         }
 
         .slide-img {
-            max-width: 85%;
-            max-height: 85%;
+            max-width: 90%;
+            max-height: 90%;
             object-fit: contain;
             border: 8px solid white;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
@@ -282,6 +282,54 @@
             background: var(--primary-blue);
             color: white;
         }
+
+        /* تصميم توقيع المصمم الذهبي الوامض */
+        .designer-signature {
+            font-weight: bold;
+            font-family: 'Cairo', sans-serif;
+            color: #FFD700;
+            /* لون ذهبي أساسي */
+            text-decoration: none;
+            display: inline-block;
+            transition: 0.3s;
+            /* تشغيل الأنيميشن */
+            animation: goldGlow 2s infinite ease-in-out;
+        }
+
+        @keyframes goldGlow {
+            0% {
+                color: #FFD700;
+                text-shadow: 0 0 5px #FFD700, 0 0 10px #FFD700;
+                transform: scale(1);
+            }
+
+            50% {
+                color: #FFFFFF;
+                /* يقلب أبيض في المنتصف لزيادة الوميض */
+                text-shadow: 0 0 15px #FFD700, 0 0 25px #FFD700, 0 0 35px #FFD700;
+                transform: scale(1.05);
+                /* تكبير بسيط جداً أثناء الوميض */
+            }
+
+            100% {
+                color: #FFD700;
+                text-shadow: 0 0 5px #FFD700, 0 0 10px #FFD700;
+                transform: scale(1);
+            }
+        }
+
+        /* ضبط السلايدر للموبايل لضمان أفضل رؤية */
+        @media (max-width: 768px) {
+            .hero-slider {
+                height: 45vh;
+                /* تقليل الارتفاع للموبايل ليناسب شاشة الهاتف */
+            }
+
+            .slide-img {
+                max-width: 100%;
+                max-height: 90%;
+            }
+        }
     </style>
 </head>
 
@@ -361,7 +409,7 @@
 
         <footer>
             جميع الحقوق محفوظة &copy; 2026 | أسماك محمود السويسي <br>
-            تصميم وتطوير: <span style="font-weight:bold; color:var(--accent-cyan);">Mohamed Salah Elsayed</span>
+            تصميم وتطوير: <span class="designer-signature">Mohamed Salah Elsayed</span>
         </footer>
     </main>
 
