@@ -483,6 +483,41 @@
             if (sessionStorage.getItem('isAdmin') === 'true') showAdmin();
             document.getElementById('rev-text').addEventListener('keypress', e => { if (e.key === 'Enter') sendReview(); });
         };
+        // --- تفعيل زر Enter لإرسال التعليق ---
+        const revInput = document.getElementById('rev-text');
+        if (revInput) {
+            revInput.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter' && !e.shiftKey) { // التأكد أن المستخدم ضغط Enter بدون Shift
+                    e.preventDefault(); // منع نزول سطر جديد
+                    sendReview(); // استدعاء دالة الإرسال
+                }
+            });
+        }
+        function sendReview() {
+            const nameInput = document.getElementById('rev-name');
+            const textInput = document.getElementById('rev-text');
+
+            const name = nameInput.value.trim();
+            const text = textInput.value.trim();
+
+            if (!name || !text) {
+                return alert("برجاء كتابة الاسم والتعليق أولاً 🐟");
+            }
+
+            // إرسال البيانات للفيربيز
+            db.collection("reviews").add({
+                name: name,
+                text: text,
+                time: Date.now()
+            }).then(() => {
+                // مسح الخانات بعد الإرسال الناجح
+                nameInput.value = '';
+                textInput.value = '';
+                alert("شكراً لرأيك الجميل! تم النشر 🌊");
+            }).catch(err => {
+                alert("حدث خطأ أثناء الإرسال، حاول مرة أخرى");
+            });
+        }
 
         function loadAllData() {
             // جلب الإعدادات
@@ -587,6 +622,49 @@
             const img = document.getElementById('z-img');
             img.parentElement.onmousemove = e => { img.style.transformOrigin = `${(e.offsetX / img.offsetWidth) * 100}% ${(e.offsetY / img.offsetHeight) * 100}%`; img.style.transform = "scale(2)"; };
             img.parentElement.onmouseleave = () => img.style.transform = "scale(1)";
+        }
+
+        // --- دالة عرض تفاصيل المقال (المدونة) ---
+        function viewBlog(id) {
+            // البحث عن المقال المختار داخل مصفوفة المقالات
+            const b = allBlogs.find(x => x.id === id);
+
+            if (!b) {
+                console.error("المقال غير موجود");
+                return;
+            }
+
+            // بناء محتوى عرض المقال
+            const content = `
+        <div style="text-align: right; direction: rtl;">
+            <!-- صورة المقال الكبيرة -->
+            <img src="${b.img}" style="width:100%; max-height:400px; object-fit:cover; border-radius:15px; margin-bottom:20px; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">
+            
+            <!-- عنوان المقال -->
+            <h2 style="color:var(--primary-blue); font-family:'El Messiri', sans-serif; margin-bottom:15px; border-right: 5px solid var(--accent-cyan); padding-right: 15px;">
+                ${b.title}
+            </h2>
+            
+            <hr style="margin:20px 0; opacity:0.1;">
+            
+            <!-- محتوى المقال -->
+            <div style="line-height:1.8; color:#444; font-size:17px; white-space: pre-wrap;">
+                ${b.desc}
+            </div>
+            
+            <!-- زر العودة -->
+            <button class="admin-btn" style="margin-top:30px; width:100%; background:var(--primary-blue);" onclick="closeModals()">
+                العودة للمدونة 🌊
+            </button>
+        </div>
+    `;
+
+            // حقن المحتوى في النافذة المنبثقة وفتحها
+            document.getElementById('modal-body').innerHTML = content;
+            document.getElementById('detail-overlay').style.display = 'block';
+
+            // منع التمرير في الصفحة الخلفية أثناء فتح المقال
+            document.body.style.overflow = 'hidden';
         }
 
         // --- 5. Cart & Checkout ---
@@ -728,7 +806,13 @@
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
         function toggleSearch() { const s = document.getElementById('search-bar'); s.style.display = (s.style.display === 'none' ? 'block' : 'none'); }
         function updateCart() { document.getElementById('cart-count').innerText = cart.length; }
-        function closeModals() { document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none'); }
+        function closeModals() {
+            // 1. إخفاء جميع النوافذ المنبثقة
+            document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none');
+
+            // 2. إعادة خاصية التمرير للصفحة (هذا هو الحل للمشكلة)
+            document.body.style.overflow = 'auto';
+        }
         function deleteDoc(col, id) { if (confirm("حذف؟")) db.collection(col).doc(id).delete(); }
         function removeFromCart(name) { cart = cart.filter(i => i.name !== name); updateCart(); if (cart.length === 0) closeModals(); else openCheckout(); }
         function backToStore() { document.getElementById('admin-panel').style.display = 'none'; document.getElementById('store-front').style.display = 'block'; }
@@ -778,8 +862,93 @@
             renderFilteredGrid(filtered);
         }
 
-        function clearForms() { document.querySelectorAll('input, textarea').forEach(i => i.value = ''); }
+        // --- دالة عرض تفاصيل المقال (المدونة) ---
+        function viewBlog(id) {
+            // البحث عن المقال المختار داخل مصفوفة المقالات
+            const b = allBlogs.find(x => x.id === id);
 
+            if (!b) {
+                console.error("المقال غير موجود");
+                return;
+            }
+
+            // بناء محتوى عرض المقال
+            const content = `
+        <div style="text-align: right; direction: rtl;">
+            <!-- صورة المقال الكبيرة -->
+            <img src="${b.img}" style="width:100%; max-height:400px; object-fit:cover; border-radius:15px; margin-bottom:20px; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">
+            
+            <!-- عنوان المقال -->
+            <h2 style="color:var(--primary-blue); font-family:'El Messiri', sans-serif; margin-bottom:15px; border-right: 5px solid var(--accent-cyan); padding-right: 15px;">
+                ${b.title}
+            </h2>
+            
+            <hr style="margin:20px 0; opacity:0.1;">
+            
+            <!-- محتوى المقال -->
+            <div style="line-height:1.8; color:#444; font-size:17px; white-space: pre-wrap;">
+                ${b.desc}
+            </div>
+            
+            <!-- زر العودة -->
+            <button class="admin-btn" style="margin-top:30px; width:100%; background:var(--primary-blue);" onclick="closeModals()">
+                العودة للمدونة 🌊
+            </button>
+        </div>
+    `;
+
+            // حقن المحتوى في النافذة المنبثقة وفتحها
+            document.getElementById('modal-body').innerHTML = content;
+            document.getElementById('detail-overlay').style.display = 'block';
+
+            // منع التمرير في الصفحة الخلفية أثناء فتح المقال
+            document.body.style.overflow = 'hidden';
+        }
+        // --- دالة تشغيل زر "اطلب الآن واتساب" ---
+        function contactSupport() {
+            // جلب رقم الواتساب المسجل في الإعدادات وتنظيفه من أي مسافات
+            let waNum = settings.wa ? settings.wa.replace(/\D/g, '') : "201021422730";
+            if (!waNum.startsWith('20')) waNum = '20' + waNum; // إضافة كود مصر إذا لم يكن موجوداً
+
+            const message = encodeURIComponent("مرحباً أسماك محمود السويسي، أريد الاستفسار عن الأسماك المتاحة اليوم..");
+            window.open(`https://api.whatsapp.com/send?phone=${waNum}&text=${message}`, '_blank');
+        }
+
+        // --- دالة تشغيل زر "توصيل منزلي سريع" (عرض جدول الشحن) ---
+        function showShippingInfo() {
+            const govPrices = settings.govShipping || {}; // جلب جدول أسعار المحافظات
+
+            let pricesHtml = "";
+            // تحويل البيانات لأسطر داخل الجدول
+            Object.keys(govPrices).forEach(gov => {
+                pricesHtml += `
+            <div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #eee;">
+                <span>${gov}</span>
+                <b style="color:var(--primary-blue)">${govPrices[gov]} ج.م</b>
+            </div>`;
+            });
+
+            const content = `
+        <div style="text-align: center;">
+            <i class="fa fa-truck-fast" style="font-size: 50px; color: var(--accent-cyan); margin-bottom: 20px;"></i>
+            <h2 style="color: var(--primary-blue); margin-bottom: 10px;">أسعار التوصيل المنزلي 🚚</h2>
+            <p style="font-size:13px; color:gray; margin-bottom:20px;">نصلك أينما كنت بأفضل جودة وتغليف</p>
+            
+            <div style="max-height: 300px; overflow-y: auto; padding: 15px; background: #f9f9f9; border-radius: 15px; text-align: right;">
+                ${pricesHtml || "<p style='text-align:center; color:gray;'>جاري تحديث قائمة الأسعار من قبل الإدارة...</p>"}
+            </div>
+            
+            <button class="admin-btn" style="width: 100%; margin-top: 25px;" onclick="closeModals()">فهمت ذلك</button>
+        </div>
+    `;
+
+            // عرض المحتوى داخل النافذة المنبثقة الموجودة أصلاً
+            document.getElementById('modal-body').innerHTML = content;
+            document.getElementById('detail-overlay').style.display = 'block';
+        }
+
+        function clearForms() { document.querySelectorAll('input, textarea').forEach(i => i.value = ''); }
+        document.addEventListener('contextmenu', e => e.preventDefault());
         window.onscroll = () => { document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 50); };
     </script>
 </body>
