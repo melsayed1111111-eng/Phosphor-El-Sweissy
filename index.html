@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>أسماك محمود السويسي | ملك الفسفور</title>
+
+    <!-- Favicon (أيقونة التابة) -->
+    <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/2970/2970104.png" type="image/png">
+
+    <!-- Fonts & Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;700&family=El+Messiri:wght@700&family=Pacifico&display=swap"
+        rel="stylesheet">
+
+    <!-- Libraries -->
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <style>
+        :root {
+            --primary-blue: #003366;
+            /* أزرق بحري عميق */
+            --accent-cyan: #00bcd4;
+            /* لون البحر الفاتح */
+            --glass-white: rgba(255, 255, 255, 0.85);
+            --nature-border: 12px solid var(--primary-blue);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Cairo', sans-serif;
+        }
+
+        body {
+            background: url('https://images.unsplash.com/photo-1551244072-5d12893278ab?q=80&w=1920') no-repeat center center fixed;
+            background-size: cover;
+            color: #1a1a1a;
+            overflow-x: hidden;
+            border-left: var(--nature-border);
+            border-right: var(--nature-border);
+            user-select: none;
+            min-height: 100vh;
+        }
+
+        .glass-panel {
+            background: var(--glass-white);
+            backdrop-filter: blur(15px);
+            border: 2px solid var(--primary-blue);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Navbar */
+        nav {
+            position: fixed;
+            top: 0;
+            width: calc(100% - 24px);
+            height: 100px;
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
+            padding: 0 5%;
+            z-index: 1000;
+            margin: 0 12px;
+            transition: 0.4s;
+        }
+
+        nav.scrolled {
+            background: rgba(255, 255, 255, 0.95);
+            height: 80px;
+            border-bottom: 3px solid var(--accent-cyan);
+        }
+
+        .brand-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .brand-name {
+            font-family: 'El Messiri', sans-serif;
+            font-size: 28px;
+            font-weight: 900;
+            color: var(--primary-blue);
+            line-height: 1;
+            text-align: center;
+        }
+
+        .fish-icon {
+            color: var(--accent-cyan);
+            font-size: 24px;
+            margin: 0 10px;
+        }
+
+        /* Search & Sidebar Triggers */
+        .nav-right,
+        .nav-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .icon-trigger {
+            font-size: 22px;
+            color: var(--primary-blue);
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .icon-trigger:hover {
+            color: var(--accent-cyan);
+            transform: scale(1.1);
+        }
+
+        /* Sidebar */
+        #sidebar {
+            position: fixed;
+            top: 0;
+            right: -300px;
+            width: 280px;
+            height: 100%;
+            z-index: 5000;
+            transition: 0.5s;
+            padding: 30px 20px;
+            overflow-y: auto;
+        }
+
+        #sidebar.open {
+            right: 0;
+        }
+
+        .side-item {
+            padding: 15px;
+            border-bottom: 1px dashed var(--accent-cyan);
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .sub-menu {
+            max-height: 0;
+            overflow: hidden;
+            transition: 0.4s;
+            background: rgba(0, 0, 0, 0.03);
+        }
+
+        /* Hero Slider */
+        .hero-slider {
+            width: 100%;
+            height: 70vh;
+            position: relative;
+            overflow: hidden;
+            border-bottom: 8px solid var(--primary-blue);
+            margin-top: 100px;
+        }
+
+        .slides {
+            display: flex;
+            height: 100%;
+            transition: 1.2s cubic-bezier(0.645, 0.045, 0.355, 1);
+        }
+
+        .slide {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .slide-img {
+            max-width: 85%;
+            max-height: 85%;
+            object-fit: contain;
+            border: 8px solid white;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Grid */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 25px;
+            padding: 40px 5%;
+        }
+
+        .card {
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.4s;
+            border-bottom: 6px solid var(--accent-cyan) !important;
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            background: #fff;
+        }
+
+        .card img {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+            border-radius: 12px;
+        }
+
+        /* Forms */
+        .vertical-form input,
+        .vertical-form select,
+        .vertical-form textarea {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 12px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            display: block;
+        }
+
+        .admin-btn {
+            padding: 12px 24px;
+            background: var(--primary-blue);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .admin-btn:hover {
+            background: var(--accent-cyan);
+        }
+
+        /* Float Cart */
+        .cart-float {
+            position: fixed;
+            bottom: 30px;
+            left: 40px;
+            background: var(--accent-cyan);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 50px;
+            z-index: 1500;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Modals */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 4000;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .modal-content {
+            max-width: 900px;
+            margin: 30px auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            position: relative;
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px;
+            background: var(--primary-blue);
+            color: white;
+        }
+    </style>
+</head>
+
+<body oncontextmenu="return false;">
+
+    <!-- Sidebar القائمة الجانبية -->
+    <div id="sidebar" class="glass-panel">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h3 style="color:var(--primary-blue)">أنواع الأسماك 🐟</h3>
+            <i class="fa fa-times icon-trigger" onclick="toggleSidebar()"></i>
+        </div>
+        <div id="side-categories"></div>
+    </div>
+
+    <!-- Navbar الهيدر -->
+    <nav id="navbar">
+        <div class="nav-right">
+            <i class="fa fa-search icon-trigger" onclick="toggleSearch()"></i>
+            <div id="search-bar" class="glass-panel"
+                style="display:none; position:absolute; top:110px; padding:10px; width:250px;">
+                <input type="text" id="search-input" placeholder="ابحث عن سمك..." oninput="liveSearch()"
+                    style="width:100%; padding:8px; border:none; outline:none;">
+            </div>
+        </div>
+
+        <div class="brand-container" onclick="backToStore()" style="cursor:pointer;">
+            <div style="display:flex; align-items:center;">
+                <i class="fa fa-fish-bubble fish-icon"></i>
+                <h1 class="brand-name">أسماك<br>محمود السويسي</h1>
+                <i class="fa fa-fish fish-icon"></i>
+            </div>
+            <small style="color:var(--accent-cyan); letter-spacing:2px;">طازج من البحر إليك</small>
+        </div>
+
+        <div class="nav-left">
+            <i class="fa fa-bars icon-trigger" onclick="toggleSidebar()"></i>
+            <i class="fa fa-user-shield icon-trigger" onclick="loginAdmin()"></i>
+        </div>
+    </nav>
+
+    <main id="store-front">
+        <!-- Slider السلايدر -->
+        <section class="hero-slider">
+            <div class="slides" id="heroSlider">
+                <!-- الصور ستجلب من الفيربيز أو الصور الافتراضية بالأسفل -->
+            </div>
+        </section>
+
+        <!-- Features -->
+        <div
+            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; padding: 40px 5%; text-align: center;">
+            <div class="glass-panel" style="padding: 20px; cursor: pointer;" onclick="contactSupport()">
+                <i class="fa fa-headset" style="font-size: 30px; color: var(--accent-cyan);"></i>
+                <h4>اطلب الآن واتساب</h4>
+            </div>
+            <div class="glass-panel" style="padding: 20px; cursor: pointer;" onclick="showShippingInfo()">
+                <i class="fa fa-truck-fast" style="font-size: 30px; color: var(--accent-cyan);"></i>
+                <h4>توصيل منزلي سريع</h4>
+            </div>
+        </div>
+
+        <h2 style="text-align:center; color:var(--primary-blue);">شروة النهاردة 🦐</h2>
+        <section class="grid" id="customer-product-grid"></section>
+
+        <h2 style="text-align:center; color:var(--primary-blue);">فوائد الأسماك 🌊</h2>
+        <section class="grid" id="customer-blog-grid"></section>
+
+        <!-- Reviews -->
+        <section style="padding: 40px 5%; text-align: center;">
+            <h2 style="color:var(--primary-blue)">آراء عشاق الفسفور</h2>
+            <div id="reviews-display"></div>
+            <div class="glass-panel vertical-form" style="padding:25px; max-width:600px; margin:20px auto;">
+                <input type="text" id="rev-name" placeholder="الاسم">
+                <textarea id="rev-text" placeholder="اكتب رأيك هنا واضغط Enter" rows="2"></textarea>
+            </div>
+        </section>
+
+        <footer>
+            جميع الحقوق محفوظة &copy; 2026 | أسماك محمود السويسي <br>
+            تصميم وتطوير: <span style="font-weight:bold; color:var(--accent-cyan);">Mohamed Salah Elsayed</span>
+        </footer>
+    </main>
+
+    <!-- Admin Panel لوحة الإدارة -->
+    <div id="admin-panel" style="display:none; padding:120px 5% 50px; background:#f0faff; min-height:100vh;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:40px;">
+            <h2>لوحة تحكم المسئول</h2>
+            <button class="admin-btn" style="background:#333;" onclick="backToStore()">العودة للمتجر</button>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 2fr; gap:30px;">
+            <div class="glass-panel vertical-form" style="padding:20px; height: fit-content;">
+                <h4>إدارة المنتجات</h4>
+                <input type="hidden" id="edit-prod-id">
+                <input type="text" id="adm-name" placeholder="اسم السمك">
+                <textarea id="adm-imgs" placeholder="روابط الصور (Enter لكل رابط)" rows="4"></textarea>
+                <input type="number" id="adm-price" placeholder="السعر للكيلو">
+                <input type="text" id="adm-cat" placeholder="الفئة (مثلاً: أسماك، قشريات)">
+                <input type="text" id="adm-subcat" placeholder="الفئة الفرعية">
+                <button class="admin-btn" style="width:100%" onclick="handleProductSave()">حفظ المنتج</button>
+
+                <hr style="margin:20px 0;">
+                <h4>إدارة المدونة</h4>
+                <input type="hidden" id="edit-blog-id">
+                <input type="text" id="adm-blog-title" placeholder="عنوان المقال">
+                <input type="text" id="adm-blog-img" placeholder="رابط الصورة">
+                <textarea id="adm-blog-desc" placeholder="المحتوى"></textarea>
+                <button class="admin-btn" style="width:100%; background:#8e44ad" onclick="handleBlogSave()">نشر في
+                    المدونة</button>
+
+                <hr style="margin:25px 0;">
+                <h4>الإعدادات والتقارير</h4>
+                <input type="text" id="adm-wa" placeholder="رقم الواتساب">
+                <button class="admin-btn" style="width:100%; background:#2980b9" onclick="handleSettingsSave()">حفظ
+                    الإعدادات</button>
+
+                <button class="admin-btn" style="width:100%; background:#2c3e50; margin-top:10px"
+                    onclick="exportOrdersToExcel()">
+                    <i class="fa fa-file-excel"></i> تصدير المبيعات (Excel)
+                </button>
+
+                <hr style="margin:25px 0;">
+                <h4>إدارة السلايدر</h4>
+                <textarea id="adm-slider-input" placeholder="روابط صور السلايدر (رابط في كل سطر)" rows="4"></textarea>
+                <button class="admin-btn" style="width:100%; background:#f39c12" onclick="handleSliderSave()">تحديث
+                    السلايدر</button>
+
+                <button class="admin-btn" style="width:100%; background:#e74c3c; margin-top:20px"
+                    onclick="logoutAdmin()">خروج نهائي</button>
+            </div>
+
+            <div class="data-lists">
+                <h4>قائمة المنتجات</h4>
+                <div id="list-products"></div>
+                <h4 style="margin-top:30px">قائمة المقالات</h4>
+                <div id="list-blogs"></div>
+                <h4 style="margin-top:30px">إدارة الآراء</h4>
+                <div id="admin-reviews-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals (Detail & Checkout) -->
+    <div id="detail-overlay" class="modal-overlay">
+        <div class="modal-content glass-panel">
+            <button onclick="closeModals()"
+                style="position:absolute; top:15px; left:15px; border:none; padding:10px; cursor:pointer;"><i
+                    class="fa fa-times"></i></button>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
+    <div id="checkout-overlay" class="modal-overlay">
+        <div class="modal-content glass-panel vertical-form" style="max-width:500px;">
+            <h3 style="text-align:center;">فاتورة الطلب 🧾</h3>
+            <div id="cart-list" style="margin-bottom:15px;"></div>
+            <input type="text" id="c-name" placeholder="اسم العميل">
+            <input type="tel" id="c-phone" placeholder="رقم الموبايل">
+            <select id="c-gov">
+                <option value="">اختر المحافظة لتحديد التوصيل</option>
+                <option value="القاهرة">القاهرة</option>
+                <option value="الجيزة">الجيزة</option>
+                <option value="الإسكندرية">الإسكندرية</option>
+                <option value="السويس">السويس</option>
+                <option value="الإسماعيلية">الإسماعيلية</option>
+                <option value="بورسعيد">بورسعيد</option>
+            </select>
+            <textarea id="c-addr" placeholder="العنوان التفصيلي"></textarea>
+            <div id="total-price-box"
+                style="padding:15px; background:#eef7f2; border-radius:10px; font-weight:bold; margin-bottom:15px;">
+            </div>
+            <button class="admin-btn" style="background:#25d366; width:100%;" onclick="finalizeOrder()">إرسال الطلب
+                (واتساب) <i class="fab fa-whatsapp"></i></button>
+        </div>
+    </div>
+
+    <div class="cart-float" onclick="openCheckout()">
+        <i class="fa fa-shopping-basket"></i> (<span id="cart-count">0</span>)
+    </div>
+
+    <script>
+        // --- 1. Firebase Config (أسماك محمود السويسي) ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDcNOtoZynpftdIfLXKatqdo49js45Zcv8",
+            authDomain: "my-market-fish.firebaseapp.com",
+            projectId: "my-market-fish",
+            storageBucket: "my-market-fish.firebasestorage.app",
+            messagingSenderId: "885584421730",
+            appId: "1:885584421730:web:08720c17c6e753f533423b",
+            measurementId: "G-L6CY121JBS"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        let allProducts = [], allBlogs = [], cart = [], settings = { wa: "201021422730", ship: 50, govShipping: {} };
+        let sliderInterval = null;
+
+        // --- 2. Initialization ---
+        window.onload = function () {
+            loadAllData();
+            if (sessionStorage.getItem('isAdmin') === 'true') showAdmin();
+            document.getElementById('rev-text').addEventListener('keypress', e => { if (e.key === 'Enter') sendReview(); });
+        };
+
+        function loadAllData() {
+            // جلب الإعدادات
+            db.collection("settings").doc("main").onSnapshot(doc => {
+                if (doc.exists) settings = { ...settings, ...doc.data() };
+            });
+
+            // جلب السلايدر
+            db.collection("settings").doc("slider").onSnapshot(doc => {
+                const imgs = doc.exists ? doc.data().images : ["https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?q=80&w=1200"];
+                renderStoreSlider(imgs);
+            });
+
+            // جلب الأسماك
+            db.collection("products").onSnapshot(snap => {
+                const grid = document.getElementById('customer-product-grid');
+                const list = document.getElementById('list-products');
+                grid.innerHTML = ''; list.innerHTML = ''; allProducts = [];
+                snap.forEach(doc => {
+                    const p = { id: doc.id, ...doc.data() }; allProducts.push(p);
+                    const firstImg = p.images.split(/[\n,]+/)[0];
+                    grid.innerHTML += `<div class="card glass-panel" onclick="viewProduct('${p.id}')"><img src="${firstImg}"><h4>${p.name}</h4><b style="color:var(--primary-blue)">${p.price} ج.م / كيلو</b></div>`;
+                    list.innerHTML += `<div class="data-item glass-panel" style="padding:10px; margin-bottom:5px; display:flex; justify-content:space-between;"><b>${p.name}</b> <div><button onclick="prepareEditProd('${p.id}')">تعديل</button> <button onclick="deleteDoc('products','${p.id}')">حذف</button></div></div>`;
+                });
+                buildSmartSidebar();
+            });
+
+            // جلب المدونة
+            db.collection("blogs").onSnapshot(snap => {
+                const grid = document.getElementById('customer-blog-grid');
+                const list = document.getElementById('list-blogs');
+                grid.innerHTML = ''; list.innerHTML = ''; allBlogs = [];
+                snap.forEach(doc => {
+                    const b = { id: doc.id, ...doc.data() }; allBlogs.push(b);
+                    grid.innerHTML += `<div class="card glass-panel" onclick="viewBlog('${b.id}')"><img src="${b.img}"><h4>${b.title}</h4></div>`;
+                    list.innerHTML += `<div class="data-item glass-panel" style="padding:10px; margin-bottom:5px; display:flex; justify-content:space-between;"><b>${b.title}</b> <div><button onclick="prepareEditBlog('${b.id}')">تعديل</button> <button onclick="deleteDoc('blogs','${b.id}')">حذف</button></div></div>`;
+                });
+            });
+
+            // جلب الآراء
+            db.collection("reviews").orderBy("time", "desc").onSnapshot(snap => {
+                const display = document.getElementById('reviews-display');
+                const adminRev = document.getElementById('admin-reviews-list');
+                display.innerHTML = ''; adminRev.innerHTML = '';
+                snap.forEach(doc => {
+                    const r = doc.data();
+                    display.innerHTML += `<div class="glass-panel" style="padding:15px; margin-bottom:10px;"><b>${r.name}:</b> <p>${r.text}</p></div>`;
+                    adminRev.innerHTML += `<div class="data-item glass-panel" style="padding:5px;"><span>${r.name}</span> <button onclick="deleteDoc('reviews','${doc.id}')">حذف</button></div>`;
+                });
+            });
+        }
+
+        // --- 3. Slider System ---
+        function renderStoreSlider(images) {
+            const sliderCon = document.getElementById('heroSlider');
+            sliderCon.innerHTML = images.map(img => `<div class="slide" style="width:${100 / images.length}%"><img class="slide-img" src="${img}"></div>`).join('');
+            sliderCon.style.width = (images.length * 100) + "%";
+            if (sliderInterval) clearInterval(sliderInterval);
+            let idx = 0;
+            sliderInterval = setInterval(() => {
+                idx = (idx + 1) % images.length;
+                sliderCon.style.transform = `translateX(${idx * (100 / images.length)}%)`;
+            }, 5000);
+        }
+
+        // --- 4. Product Details & Related ---
+        function viewProduct(id) {
+            const p = allProducts.find(x => x.id === id);
+            const imgs = p.images.split(/[\n,]+/);
+            document.getElementById('modal-body').innerHTML = `
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:25px;">
+                    <div style="overflow:hidden; border-radius:15px; position:relative;">
+                        <img id="z-img" src="${imgs[0]}" style="width:100%; height:350px; object-fit:contain; transition:0.3s; cursor:zoom-in;">
+                    </div>
+                    <div>
+                        <h2 style="color:var(--primary-blue)">${p.name}</h2>
+                        <h3 style="color:var(--accent-cyan); margin:10px 0;">${p.price} ج.م / كيلو</h3>
+                        <div style="display:flex; align-items:center; gap:10px; margin-top:30px;">
+                            <input type="number" id="prod-qty" value="1" min="1" style="width:70px; padding:10px; border-radius:10px; border:1px solid #ddd;">
+                            <button class="admin-btn" style="flex:1" onclick="addToCart('${p.id}')">أضف للسلة</button>
+                        </div>
+                    </div>
+                </div>
+                <div style="display:flex; gap:10px; margin-top:20px; overflow-x:auto;">
+                    ${imgs.map(i => `<img src="${i}" style="width:60px; height:60px; cursor:pointer; border-radius:8px; border:1px solid #eee;" onclick="document.getElementById('z-img').src='${i}'">`).join('')}
+                </div>
+                <div style="margin-top:30px;">
+                    <h4>أنواع مشابهة 🦐</h4>
+                    <div id="related-list" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:15px; margin-top:15px;"></div>
+                </div>
+            `;
+            document.getElementById('detail-overlay').style.display = 'block';
+
+            // Related Logic
+            const related = allProducts.filter(i => i.category === p.category && i.id !== p.id).slice(0, 4);
+            const relCon = document.getElementById('related-list');
+            related.forEach(rp => {
+                relCon.innerHTML += `<div onclick="viewProduct('${rp.id}')" style="cursor:pointer; text-align:center;"><img src="${rp.images.split(/[\n,]+/)[0]}" style="width:100%; height:100px; object-fit:cover; border-radius:8px;"><h6>${rp.name}</h6></div>`;
+            });
+
+            // Zoom
+            const img = document.getElementById('z-img');
+            img.parentElement.onmousemove = e => { img.style.transformOrigin = `${(e.offsetX / img.offsetWidth) * 100}% ${(e.offsetY / img.offsetHeight) * 100}%`; img.style.transform = "scale(2)"; };
+            img.parentElement.onmouseleave = () => img.style.transform = "scale(1)";
+        }
+
+        // --- 5. Cart & Checkout ---
+        function addToCart(id) {
+            const qty = parseInt(document.getElementById('prod-qty').value);
+            const p = allProducts.find(x => x.id === id);
+            for (let i = 0; i < qty; i++) cart.push(p);
+            updateCart(); alert("تمت إضافة الطلب للسلة"); closeModals();
+        }
+
+        function openCheckout() {
+            if (cart.length === 0) return alert("السلة فارغة");
+            const con = document.getElementById('cart-list');
+            const grouped = cart.reduce((acc, item) => { acc[item.name] = (acc[item.name] || 0) + 1; return acc; }, {});
+
+            con.innerHTML = Object.keys(grouped).map(name => `
+                <div class="data-item glass-panel" style="display:flex; justify-content:space-between; padding:10px; margin-bottom:5px;">
+                    <span>${name} (x${grouped[name]})</span>
+                    <i class="fa fa-trash" style="color:red; cursor:pointer;" onclick="removeFromCart('${name}')"></i>
+                </div>
+            `).join('');
+
+            updateBillUI();
+            document.getElementById('checkout-overlay').style.display = 'flex';
+        }
+
+        function updateBillUI() {
+            const gov = document.getElementById('c-gov').value;
+            const shipPrice = (settings.govShipping && settings.govShipping[gov]) ? parseFloat(settings.govShipping[gov]) : 0;
+            const subtotal = cart.reduce((s, i) => s + i.price, 0);
+            document.getElementById('total-price-box').innerHTML = `إجمالي السمك: ${subtotal} ج.م <br> التوصيل: ${shipPrice} ج.م <br> الإجمالي: ${subtotal + shipPrice} ج.م`;
+        }
+
+        document.addEventListener('change', e => { if (e.target.id === 'c-gov') updateBillUI(); });
+
+        function finalizeOrder() {
+            const name = document.getElementById('c-name').value;
+            const phone = document.getElementById('c-phone').value;
+            const gov = document.getElementById('c-gov').value;
+            if (!name || !gov || !phone) return alert("أكمل البيانات");
+
+            const shipPrice = parseFloat(settings.govShipping[gov]) || 0;
+            const subtotal = cart.reduce((s, i) => s + i.price, 0);
+
+            let msg = `*طلب سمك جديد من السويسي*%0Aالاسم: ${name}%0Aالموبايل: ${phone}%0Aالمحافظة: ${gov}%0Aالطلبات:%0A`;
+            const grouped = cart.reduce((acc, item) => { acc[item.name] = (acc[item.name] || 0) + 1; return acc; }, {});
+            Object.keys(grouped).forEach(k => msg += `- ${k} (الكمية: ${grouped[k]})%0A`);
+            msg += `%0A*الإجمالي النهائي:* ${subtotal + shipPrice} ج.م`;
+
+            // Save to Firebase for Excel
+            db.collection("orders").add({ customerName: name, customerPhone: phone, governorate: gov, items: msg, totalPrice: subtotal + shipPrice, timestamp: Date.now(), orderDate: new Date().toLocaleString() });
+
+            let wa = settings.wa.replace(/\D/g, ''); if (!wa.startsWith('20')) wa = '20' + wa;
+            window.open(`https://api.whatsapp.com/send?phone=${wa}&text=${msg}`, '_blank');
+            cart = []; updateCart(); closeModals();
+        }
+
+        // --- 6. Admin Actions ---
+        function loginAdmin() { if (prompt("الباسورد:") === "admin123") { sessionStorage.setItem('isAdmin', 'true'); showAdmin(); } }
+        function showAdmin() { document.getElementById('store-front').style.display = 'none'; document.getElementById('admin-panel').style.display = 'block'; localStorage.setItem('viewState', 'admin'); }
+        function backToStore() { document.getElementById('admin-panel').style.display = 'none'; document.getElementById('store-front').style.display = 'block'; localStorage.setItem('viewState', 'store'); }
+        function logoutAdmin() { sessionStorage.removeItem('isAdmin'); location.reload(); }
+
+        function handleProductSave() {
+            const id = document.getElementById('edit-prod-id').value;
+            const data = { name: document.getElementById('adm-name').value, images: document.getElementById('adm-imgs').value, price: parseFloat(document.getElementById('adm-price').value), category: document.getElementById('adm-cat').value, subcategory: document.getElementById('adm-subcat').value, visibility: 'visible' };
+            const op = id ? db.collection("products").doc(id).update(data) : db.collection("products").add(data);
+            op.then(() => { alert("تم الحفظ"); clearForms(); });
+        }
+
+        function handleSliderSave() {
+            const imgs = document.getElementById('adm-slider-input').value.split('\n').filter(i => i.trim() !== "");
+            db.collection("settings").doc("slider").set({ images: imgs }).then(() => alert("تم تحديث السلايدر"));
+        }
+
+        function exportOrdersToExcel() {
+            db.collection("orders").orderBy("timestamp", "desc").get().then(snap => {
+                const data = [];
+                snap.forEach(doc => data.push(doc.data()));
+                const ws = XLSX.utils.json_to_sheet(data);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Orders");
+                XLSX.writeFile(wb, "Mahmoud_Sweissy_Sales.xlsx");
+            });
+        }
+
+        // --- Helper Functions ---
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+        function toggleSearch() { const s = document.getElementById('search-bar'); s.style.display = (s.style.display === 'none' ? 'block' : 'none'); }
+        function updateCart() { document.getElementById('cart-count').innerText = cart.length; }
+        function closeModals() { document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none'); }
+        function deleteDoc(col, id) { if (confirm("حذف؟")) db.collection(col).doc(id).delete(); }
+        function removeFromCart(name) { cart = cart.filter(i => i.name !== name); updateCart(); if (cart.length === 0) closeModals(); else openCheckout(); }
+        function backToStore() { document.getElementById('admin-panel').style.display = 'none'; document.getElementById('store-front').style.display = 'block'; }
+
+        function buildSmartSidebar() {
+            const con = document.getElementById('side-categories'); con.innerHTML = '<div class="side-item" onclick="filterByCategory(\'الكل\')">عرض الكل 🌊</div>';
+            const catMap = {};
+            allProducts.forEach(p => {
+                if (p.category) {
+                    if (!catMap[p.category]) catMap[p.category] = new Set();
+                    if (p.subcategory) catMap[p.category].add(p.subcategory);
+                }
+            });
+            for (let cat in catMap) {
+                const subCats = Array.from(catMap[cat]);
+                con.innerHTML += `<div class="side-item" onclick="handleCategoryClick('${cat}', ${subCats.length > 0}, '${cat}')"><b>${cat}</b></div>`;
+                if (subCats.length > 0) {
+                    const subHtml = subCats.map(s => `<div class="side-item" style="padding-right:30px; font-size:13px;" onclick="filterBySubCategory('${cat}', '${s}')">- ${s}</div>`).join('');
+                    con.innerHTML += `<div id="sub-${cat}" class="sub-menu">${subHtml}</div>`;
+                }
+            }
+        }
+
+        function handleCategoryClick(cat, hasSub, id) {
+            if (hasSub) {
+                const m = document.getElementById('sub-' + id);
+                m.style.maxHeight = (m.style.maxHeight === '500px' ? '0px' : '500px');
+            }
+            const filtered = allProducts.filter(p => p.category === cat);
+            renderFilteredGrid(filtered);
+        }
+
+        function renderFilteredGrid(list) {
+            const grid = document.getElementById('customer-product-grid');
+            grid.innerHTML = list.map(p => `
+                <div class="card glass-panel" onclick="viewProduct('${p.id}')">
+                    <img src="${p.images.split(/[\n,]+/)[0]}">
+                    <h4>${p.name}</h4><b style="color:var(--primary-blue)">${p.price} ج.م</b>
+                </div>
+            `).join('');
+            if (list.length === 0) grid.innerHTML = "<p>لا توجد نتائج</p>";
+        }
+
+        function liveSearch() {
+            const q = document.getElementById('search-input').value.toLowerCase();
+            const filtered = allProducts.filter(p => p.name.toLowerCase().includes(q));
+            renderFilteredGrid(filtered);
+        }
+
+        function clearForms() { document.querySelectorAll('input, textarea').forEach(i => i.value = ''); }
+
+        window.onscroll = () => { document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 50); };
+    </script>
+</body>
+
+</html>
