@@ -7,7 +7,9 @@
     <title>أسماك محمود السويسي | ملك الفسفور</title>
 
     <!-- Favicon (أيقونة التابة) -->
-    <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/2970/2970104.png" type="image/png">
+    <link rel="icon"
+        href="https://th.bing.com/th/id/OIP.dqpj8JyjOYXCVFd6045TaAHaEK?w=242&h=180&c=7&r=0&o=7&pid=1.7&rm=3"
+        type="image/png">
 
     <!-- Fonts & Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -704,22 +706,76 @@
             const name = document.getElementById('c-name').value;
             const phone = document.getElementById('c-phone').value;
             const gov = document.getElementById('c-gov').value;
-            if (!name || !gov || !phone) return alert("أكمل البيانات");
+            const addr = document.getElementById('c-addr').value;
 
-            const shipPrice = parseFloat(settings.govShipping[gov]) || 0;
+            if (!name || !gov || !phone || !addr) return alert("برجاء إكمال جميع البيانات واختيار المحافظة");
+
+            // جلب سعر الشحن الصحيح للمحافظة
+            const govPrices = settings.govShipping || {};
+            const finalShipping = parseFloat(govPrices[gov]) || 0;
+
+            // تجميع المنتجات لحساب الكمية والإجمالي لكل صنف
+            const grouped = cart.reduce((acc, item) => {
+                if (!acc[item.name]) {
+                    acc[item.name] = { price: item.price, qty: 0 };
+                }
+                acc[item.name].qty += 1;
+                return acc;
+            }, {});
+
             const subtotal = cart.reduce((s, i) => s + i.price, 0);
+            const grandTotal = subtotal + finalShipping;
 
-            let msg = `*طلب سمك جديد من السويسي*%0Aالاسم: ${name}%0Aالموبايل: ${phone}%0Aالمحافظة: ${gov}%0Aالطلبات:%0A`;
-            const grouped = cart.reduce((acc, item) => { acc[item.name] = (acc[item.name] || 0) + 1; return acc; }, {});
-            Object.keys(grouped).forEach(k => msg += `- ${k} (الكمية: ${grouped[k]})%0A`);
-            msg += `%0A*الإجمالي النهائي:* ${subtotal + shipPrice} ج.م`;
+            // --- بناء رسالة الواتساب المنسقة بالتفصيل المطلوب ---
+            let msg = `*فاتورة طلب جديدة - أسماك محمود السويسي* 🐟%0A`;
+            msg += `---------------------------%0A`;
+            msg += `👤 *بيانات العميل:*%0A`;
+            msg += `الاسم: ${name}%0A`;
+            msg += `الموبايل: ${phone}%0A`;
+            msg += `المحافظة: ${gov}%0A`;
+            msg += `العنوان: ${addr}%0A`;
+            msg += `---------------------------%0A`;
+            msg += `📦 *تفاصيل المنتجات:*%0A%0A`;
 
-            // Save to Firebase for Excel
-            db.collection("orders").add({ customerName: name, customerPhone: phone, governorate: gov, items: msg, totalPrice: subtotal + shipPrice, timestamp: Date.now(), orderDate: new Date().toLocaleString() });
+            Object.keys(grouped).forEach(pName => {
+                const item = grouped[pName];
+                const itemTotal = item.price * item.qty;
 
-            let wa = settings.wa.replace(/\D/g, ''); if (!wa.startsWith('20')) wa = '20' + wa;
+                msg += `🔹 *${pName}*%0A`; // اسم المنتج
+                msg += `السعر: ${item.price.toFixed(2)} ج.م%0A`; // تحته السعر
+                msg += `الكمية: ${item.qty}%0A`; // تحته الكمية
+                msg += `الإجمالي: ${itemTotal.toFixed(2)} ج.م%0A`; // تحته الإجمالي للصنف
+                msg += `...........................%0A`;
+            });
+
+            msg += `%0A💰 *إجمالي المنتجات:* ${subtotal.toFixed(2)} ج.م%0A`;
+            msg += `🚚 *مصاريف التوصيل:* ${finalShipping.toFixed(2)} ج.م%0A`;
+            msg += `✅ *الإجمالي النهائي للطلب: ${grandTotal.toFixed(2)} ج.م*`;
+
+            // --- حفظ الطلب في Firebase للتصدير (Excel) ---
+            const orderData = {
+                customerName: name,
+                customerPhone: phone,
+                governorate: gov,
+                address: addr,
+                items: Object.keys(grouped).map(k => `${k} (x${grouped[k]})`).join(' - '),
+                totalPrice: grandTotal.toFixed(2),
+                orderDate: new Date().toLocaleString('ar-EG'),
+                timestamp: Date.now()
+            };
+            db.collection("orders").add(orderData);
+
+            // تنظيف رقم الواتساب وفتح الرابط
+            let wa = settings.wa.replace(/\D/g, '');
+            if (!wa.startsWith('20')) wa = '20' + wa;
+
             window.open(`https://api.whatsapp.com/send?phone=${wa}&text=${msg}`, '_blank');
-            cart = []; updateCart(); closeModals();
+
+            // تفريغ السلة وتحديث الواجهة
+            cart = [];
+            updateCart();
+            closeModals();
+            alert("تم إرسال طلبك بنجاح! شكراً لثقتك في أسماك السويسي 🌊");
         }
 
         // --- 6. Admin Actions ---
