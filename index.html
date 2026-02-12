@@ -657,6 +657,57 @@
             op.then(() => { alert("تم الحفظ"); clearForms(); });
         }
 
+        // --- دالة حفظ أو تعديل مقال في المدونة ---
+        function handleBlogSave() {
+            const id = document.getElementById('edit-blog-id').value;
+            const title = document.getElementById('adm-blog-title').value;
+            const img = document.getElementById('adm-blog-img').value;
+            const desc = document.getElementById('adm-blog-desc').value;
+
+            if (!title || !desc) return alert("برجاء إكمال بيانات المقال");
+
+            const blogData = {
+                title: title,
+                img: img || 'https://images.unsplash.com/photo-1551244072-5d12893278ab?q=80&w=800',
+                desc: desc,
+                time: Date.now()
+            };
+
+            const action = id ? db.collection("blogs").doc(id).update(blogData) : db.collection("blogs").add(blogData);
+
+            action.then(() => {
+                alert("✅ تم نشر المقال في مدونة السويسي");
+                document.getElementById('edit-blog-id').value = '';
+                document.getElementById('adm-blog-title').value = '';
+                document.getElementById('adm-blog-img').value = '';
+                document.getElementById('adm-blog-desc').value = '';
+            }).catch(err => alert("خطأ في النشر: " + err));
+        }
+
+        // --- دالة تعديل المدونة ---
+        function prepareEditBlog(id) {
+            const b = allBlogs.find(x => x.id === id);
+            if (b) {
+                document.getElementById('edit-blog-id').value = b.id;
+                document.getElementById('adm-blog-title').value = b.title;
+                document.getElementById('adm-blog-img').value = b.img;
+                document.getElementById('adm-blog-desc').value = b.desc;
+                window.scrollTo(0, 0);
+            }
+        }
+
+        // --- دالة حفظ إعدادات المتجر (الواتساب) ---
+        function handleSettingsSave() {
+            const wa = document.getElementById('adm-wa').value;
+            if (!wa) return alert("أدخل رقم الواتساب");
+
+            db.collection("settings").doc("main").set({
+                wa: wa
+            }, { merge: true }).then(() => {
+                alert("✅ تم حفظ رقم واتساب أسماك السويسي");
+            });
+        }
+
         function handleSliderSave() {
             const imgs = document.getElementById('adm-slider-input').value.split('\n').filter(i => i.trim() !== "");
             db.collection("settings").doc("slider").set({ images: imgs }).then(() => alert("تم تحديث السلايدر"));
